@@ -24,7 +24,7 @@ module load compiler/gcc/9
 echo "loading " $ownroot
 source $ownroot
 
-echo "executing $build_dir/analyse -i list.txt -o output.root"
-$build_dir/analyse -i list.txt -o output.root
+echo "executing $build_dir/analyse -i list.txt -o output.root p 2"
+$build_dir/analyse -i list.txt -o output.root -p 2
 
 echo JOB FINISHED!

@@ -6,6 +6,7 @@
 #define QUALITY_ASSURANCE_SRC_TREE_READER_H_
 
 #include <TChain.h>
+#include <TFile.h>
 #include <TH3F.h>
 #include <TProfile2D.h>
 
@@ -32,6 +33,7 @@ public:
   void Init( std::map<std::string, void*>& branch_map ) override;
   void Exec() override;
   void Finish() override;
+  void InitEffieciencies(const std::string& file_name);
 private:
   TH2F* Make2DHisto( Axis first, Axis second ){
     std::string name = first.name + "_" + second.name;
@@ -74,7 +76,8 @@ private:
     MEAN_PZ,
     MEAN_THETA,
     REL_AMOUNT_OF_PIONS,
-    REL_AMOUNT_OF_HELIUM
+    REL_AMOUNT_OF_HELIUM,
+    MEAN_YCM
   };
   std::map<FIELDS, int> fields_id_; // map to match detectors' fields with enumerator
   std::map<MULTIPLICITIES, Axis> multiplicities_axes_{
@@ -94,6 +97,7 @@ private:
       std::pair( TRACK_VALUES::MEAN_PT, Axis{ "mean_pT", "<p_{T}> [GeV/c]", 200, 0.0, 2.0 } ),
       std::pair( TRACK_VALUES::MEAN_PZ, Axis{ "mean_pz", "<p_{z}> [GeV/c]", 200, 0.0, 2.0 } ),
       std::pair( TRACK_VALUES::MEAN_Y, Axis{ "mean_y", "<y>", 200, 0.0, 2.0 } ),
+      std::pair( TRACK_VALUES::MEAN_YCM, Axis{ "mean_ycm", "<y_{cm}>", 200, -1.0, 1.0 } ),
       std::pair( TRACK_VALUES::MEAN_THETA, Axis{ "mean_theta", "<#theta>", 200, 0.0, 2.0 } ),
       std::pair( TRACK_VALUES::REL_AMOUNT_OF_PIONS, Axis{ "rel_amount_pions", "N Pions / N tracks", 100, 0.0, 100.0 } ),
       std::pair( TRACK_VALUES::REL_AMOUNT_OF_HELIUM, Axis{ "rel_amount_helium", "N Helium / N tracks", 100, 0.0, 100.0 } ),
@@ -118,6 +122,8 @@ private:
   TProfile2D* pt_rapidity_chi2_;
   TProfile2D* pt_rapidity_dca_xy_;
   TProfile2D* pt_rapidity_dca_z_;
+  TFile* file_efficiency_protons_;
+  std::vector<TH2F*> efficiencies_;
 };
 } // namespace AnalysisTree
 #endif // QUALITY_ASSURANCE_SRC_TREE_READER_H_

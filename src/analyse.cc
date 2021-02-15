@@ -12,6 +12,7 @@ int main(int n_args, char** args){
   }
   std::string file_list;
   std::string output_file{"output.root"};
+  std::string efficiency_file{"output.root"};
   int physical_trgger{0};
   po::options_description options("Options");
   options.add_options()
@@ -20,6 +21,8 @@ int main(int n_args, char** args){
        "Path to input file list")
       ("output,o", po::value<std::string>(&output_file),
        "output file name")
+      ("efficiency,e", po::value<std::string>(&efficiency_file),
+       "Path to file with protons efficiency")
       ("physical_trigger,p", po::value<int>(&physical_trgger),
        "Physical trigger number (2 or 3)")
       ("start-collisions,s","Selects collisions in START detector");
@@ -49,7 +52,7 @@ int main(int n_args, char** args){
   AnalysisTree::TaskManager manager({file_list}, {"hades_analysis_tree"});
   manager.SetEventCuts(evet_cuts);
   auto *analysis_task = new AnalysisTree::AnalysisTask;
-
+  analysis_task->InitEffieciencies(efficiency_file);
   manager.AddTask(analysis_task);
   manager.SetOutFileName(output_file);
   manager.Init();

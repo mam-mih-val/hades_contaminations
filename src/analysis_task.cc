@@ -67,7 +67,7 @@ void AnalysisTask::Init(std::map<std::string, void *> &branch_map) {
     }
     track_values_matrix_.insert({x.first, x_row});
   }
-
+//  this->InitEffieciencies();
 }
 
 void AnalysisTask::Exec() {
@@ -89,6 +89,7 @@ void AnalysisTask::Exec() {
       TRACK_VALUES::MEAN_PZ,
       TRACK_VALUES::MEAN_Y,
       TRACK_VALUES::MEAN_THETA,
+      TRACK_VALUES::MEAN_YCM,
   };
   std::map<MULTIPLICITIES, int> multiplicities;
   std::map<TRACK_VALUES, float> track_values;
@@ -100,6 +101,9 @@ void AnalysisTask::Exec() {
   auto vtx_y = event_header_->GetVertexY();
   auto vtx_z = event_header_->GetVertexZ();
   auto vtx_r = sqrt(vtx_x*vtx_x+vtx_y*vtx_y);
+  auto centrality = event_header_->GetField<float>(
+      config_->GetBranchConfig( "event_header" ).GetFieldId("selected_tof_rpc_hits_centrality"));
+  auto centrality_class = (size_t) ( (centrality-2.5)/5.0 );
   int n_tracks = mdc_vtx_tracks_->GetNumberOfChannels(); // number of tracks in current event
 
   vtx_z_distribution_->Fill(vtx_z);
@@ -119,6 +123,8 @@ void AnalysisTask::Exec() {
   double mean_pl=0;
   double mean_theta=0;
   double mean_y=0;
+  double sum_w_ycm =0;
+  double sum_w=0;
   int n_pions = 0;
   int n_helium = 0;
   for (size_t i = 0; i < n_tracks; ++i) { // loop over all tracks if current event
@@ -158,6 +164,32 @@ void AnalysisTask::Exec() {
     pt_rapidity_dca_xy_->Fill(y, pT, fabs(dca_xy));
     pt_rapidity_dca_z_->Fill(y, pT, fabs(dca_z));
     n_protons++;
+
+//    if( pT < 0.6 )
+//      continue;
+    if (-10.0 > dca_xy || dca_xy > 10.0)
+      continue;
+    if (-10.0 > dca_z || dca_z > 10.0)
+      continue;
+    if (0.0 > chi2 || chi2 > 100.0)
+      continue;
+    try {
+      auto bin = efficiencies_.at(centrality_class)->FindBin(y, pT);
+      auto eff = efficiencies_.at(centrality_class)->GetBinContent(bin);
+      if(eff < 0.1)
+        continue;
+      sum_w_ycm+= (1.0 / eff) * y;
+//      sum_w_ycm+= y;
+      sum_w+=(1.0 / eff);
+//      sum_w+=1.0;
+    } catch (std::exception&) {
+      auto bin = efficiencies_.back()->FindBin(y, pT);
+      auto eff = efficiencies_.back()->GetBinContent(bin);
+      if(eff < 0.1)
+        continue;
+//      sum_w_ycm+= (1.0 / eff) * y;
+//      sum_w+=(1.0 / eff);
+    }
   }
   auto n_modules = wall_hits_->GetNumberOfChannels();
   float signal_w1=0.0;
@@ -187,6 +219,7 @@ void AnalysisTask::Exec() {
   mean_pt/= (double) n_tracks;
   mean_pl/= (double) n_tracks;
   mean_y/= (double) n_tracks;
+  sum_w_ycm = fabs(sum_w) > std::numeric_limits<double>::min() ? sum_w_ycm/sum_w : -999;
   mean_theta/= (double) n_tracks;
   auto rel_pions = (double) n_pions / (double ) n_tracks * 100.0;
   auto rel_helium = (double) n_helium / (double ) n_tracks * 100.0;
@@ -195,6 +228,7 @@ void AnalysisTask::Exec() {
   track_values.insert(std::make_pair( TRACK_VALUES::MEAN_PT, mean_pt ));
   track_values.insert(std::make_pair( TRACK_VALUES::MEAN_PZ, mean_pl ));
   track_values.insert(std::make_pair( TRACK_VALUES::MEAN_Y, mean_y ));
+  track_values.insert(std::make_pair( TRACK_VALUES::MEAN_YCM, sum_w_ycm));
   track_values.insert(std::make_pair( TRACK_VALUES::MEAN_THETA, mean_theta ));
   track_values.insert(std::make_pair( TRACK_VALUES::REL_AMOUNT_OF_PIONS, rel_pions));
   track_values.insert(std::make_pair( TRACK_VALUES::REL_AMOUNT_OF_HELIUM, rel_helium));
@@ -238,5 +272,17 @@ void AnalysisTask::Finish() {
   for( const auto& matrices : track_values_matrix_ )
     for( const auto& matrix : matrices.second )
       matrix.second->Write();
+}
+void AnalysisTask::InitEffieciencies(const std::string& file_name) {
+  const auto& protons_file_name = file_name;
+  file_efficiency_protons_ = TFile::Open(protons_file_name.c_str(), "read");
+  int p=2;
+  while(p<40){
+    efficiencies_.emplace_back();
+    std::string name = "efficiency_"+std::to_string(p);
+    if( file_efficiency_protons_ )
+      file_efficiency_protons_->GetObject(name.c_str(), efficiencies_.back());
+    p+=5;
+  }
 }
 } // namespace AnalysisTree

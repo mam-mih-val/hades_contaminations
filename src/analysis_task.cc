@@ -79,8 +79,6 @@ void AnalysisTask::Exec() {
       MULTIPLICITIES::FW_1_SIGNAL,
       MULTIPLICITIES::FW_2_SIGNAL,
       MULTIPLICITIES::FW_3_SIGNAL,
-      MULTIPLICITIES::N_PIONS,
-      MULTIPLICITIES::N_HELIUM
   };
   std::vector<TRACK_VALUES> track_val_keys{
       TRACK_VALUES::ERAT,
@@ -124,6 +122,8 @@ void AnalysisTask::Exec() {
   double mean_theta=0;
   double mean_y=0;
   double sum_w_ycm =0;
+  double n_fw=0;
+  double n_bw=0;
   double sum_w=0;
   int n_pions = 0;
   int n_helium = 0;
@@ -165,8 +165,6 @@ void AnalysisTask::Exec() {
     pt_rapidity_dca_z_->Fill(y, pT, fabs(dca_z));
     n_protons++;
 
-//    if( pT < 0.6 )
-//      continue;
     if (-10.0 > dca_xy || dca_xy > 10.0)
       continue;
     if (-10.0 > dca_z || dca_z > 10.0)
@@ -175,21 +173,22 @@ void AnalysisTask::Exec() {
       continue;
     try {
       auto bin = efficiencies_.at(centrality_class)->FindBin(y, pT);
+      auto sim_bin = efficiencies_.at(centrality_class)->FindBin(-y, pT);
       auto eff = efficiencies_.at(centrality_class)->GetBinContent(bin);
+      auto sim_eff = efficiencies_.at(centrality_class)->GetBinContent(sim_bin);
       if(eff < 0.1)
+        continue;
+      if(sim_eff < 0.1)
         continue;
       sum_w_ycm+= (1.0 / eff) * y;
 //      sum_w_ycm+= y;
       sum_w+=(1.0 / eff);
 //      sum_w+=1.0;
-    } catch (std::exception&) {
-      auto bin = efficiencies_.back()->FindBin(y, pT);
-      auto eff = efficiencies_.back()->GetBinContent(bin);
-      if(eff < 0.1)
-        continue;
-//      sum_w_ycm+= (1.0 / eff) * y;
-//      sum_w+=(1.0 / eff);
-    }
+      if( y>0 )
+        n_fw+=(1.0 / eff);
+      else
+        n_bw+=(1.0 / eff);
+    } catch (std::exception&) {}
   }
   auto n_modules = wall_hits_->GetNumberOfChannels();
   float signal_w1=0.0;
@@ -210,8 +209,6 @@ void AnalysisTask::Exec() {
   multiplicities.insert(std::make_pair(MULTIPLICITIES::FW_1_SIGNAL,signal_w1)); // getting multiplicity from event header
   multiplicities.insert(std::make_pair(MULTIPLICITIES::FW_2_SIGNAL,signal_w2)); // getting multiplicity from event header
   multiplicities.insert(std::make_pair(MULTIPLICITIES::FW_3_SIGNAL,signal_w3)); // getting multiplicity from event header
-  multiplicities.insert(std::make_pair(MULTIPLICITIES::N_PIONS,n_pions)); // getting multiplicity from event header
-  multiplicities.insert(std::make_pair(MULTIPLICITIES::N_HELIUM,n_helium)); // getting multiplicity from event header
 
   double erat =erat_y/erat_x;
   double prat =prat_y/prat_x;
@@ -221,8 +218,7 @@ void AnalysisTask::Exec() {
   mean_y/= (double) n_tracks;
   sum_w_ycm = fabs(sum_w) > std::numeric_limits<double>::min() ? sum_w_ycm/sum_w : -999;
   mean_theta/= (double) n_tracks;
-  auto rel_pions = (double) n_pions / (double ) n_tracks * 100.0;
-  auto rel_helium = (double) n_helium / (double ) n_tracks * 100.0;
+  auto bw_vs_fw = fabs(n_bw - n_fw) > std::numeric_limits<double>::min() ? n_bw - n_fw : -999;
   track_values.insert(std::make_pair( TRACK_VALUES::ERAT, erat ));
   track_values.insert(std::make_pair( TRACK_VALUES::PRAT, prat ));
   track_values.insert(std::make_pair( TRACK_VALUES::MEAN_PT, mean_pt ));
@@ -230,8 +226,7 @@ void AnalysisTask::Exec() {
   track_values.insert(std::make_pair( TRACK_VALUES::MEAN_Y, mean_y ));
   track_values.insert(std::make_pair( TRACK_VALUES::MEAN_YCM, sum_w_ycm));
   track_values.insert(std::make_pair( TRACK_VALUES::MEAN_THETA, mean_theta ));
-  track_values.insert(std::make_pair( TRACK_VALUES::REL_AMOUNT_OF_PIONS, rel_pions));
-  track_values.insert(std::make_pair( TRACK_VALUES::REL_AMOUNT_OF_HELIUM, rel_helium));
+  track_values.insert(std::make_pair( TRACK_VALUES::BW_VS_FW, bw_vs_fw ));
   for( auto x : multiplicities )
     for(auto y : multiplicities){
       if( x.first == y.first )

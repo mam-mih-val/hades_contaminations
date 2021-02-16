@@ -122,9 +122,13 @@ void AnalysisTask::Exec() {
   double mean_theta=0;
   double mean_y=0;
   double sum_w_ycm =0;
-  double n_fw=0;
-  double n_bw=0;
+  double sum_w_ycm_no_eff =0;
   double sum_w=0;
+  double sum_w_no_eff=0;
+  double n_fw=0;
+  double n_fw_no_eff=0;
+  double n_bw=0;
+  double n_bw_no_eff=0;
   int n_pions = 0;
   int n_helium = 0;
   for (size_t i = 0; i < n_tracks; ++i) { // loop over all tracks if current event
@@ -181,13 +185,15 @@ void AnalysisTask::Exec() {
       if(sim_eff < 0.1)
         continue;
       sum_w_ycm+= (1.0 / eff) * y;
-//      sum_w_ycm+= y;
+      sum_w_ycm_no_eff+= y;
       sum_w+=(1.0 / eff);
-//      sum_w+=1.0;
-      if( y>0 )
-        n_fw+=(1.0 / eff);
-      else
+      sum_w_no_eff+=1.0;
+      if( y>0 ) {
+        n_fw += (1.0 / eff);
+        n_fw_no_eff += 1.0;
+      } else
         n_bw+=(1.0 / eff);
+        n_bw_no_eff += 1.0;
     } catch (std::exception&) {}
   }
   auto n_modules = wall_hits_->GetNumberOfChannels();
@@ -217,16 +223,22 @@ void AnalysisTask::Exec() {
   mean_pl/= (double) n_tracks;
   mean_y/= (double) n_tracks;
   sum_w_ycm = fabs(sum_w) > std::numeric_limits<double>::min() ? sum_w_ycm/sum_w : -999;
+  sum_w_ycm_no_eff = fabs(sum_w_no_eff) > std::numeric_limits<double>::min() ? sum_w_ycm_no_eff/sum_w_no_eff : -999;
   mean_theta/= (double) n_tracks;
-  auto bw_vs_fw = fabs(n_bw - n_fw) > std::numeric_limits<double>::min() ? n_bw - n_fw : -999;
+  auto bw_vs_fw = fabs(n_bw) > std::numeric_limits<double>::min() ||
+                          fabs(n_fw) > std::numeric_limits<double>::min() ? n_fw - n_bw  : -999;
+  auto bw_vs_fw_no_eff = fabs(n_bw_no_eff) > std::numeric_limits<double>::min() ||
+      fabs(n_fw_no_eff) > std::numeric_limits<double>::min() ? n_fw_no_eff - n_bw_no_eff : -999;
   track_values.insert(std::make_pair( TRACK_VALUES::ERAT, erat ));
   track_values.insert(std::make_pair( TRACK_VALUES::PRAT, prat ));
   track_values.insert(std::make_pair( TRACK_VALUES::MEAN_PT, mean_pt ));
   track_values.insert(std::make_pair( TRACK_VALUES::MEAN_PZ, mean_pl ));
   track_values.insert(std::make_pair( TRACK_VALUES::MEAN_Y, mean_y ));
   track_values.insert(std::make_pair( TRACK_VALUES::MEAN_YCM, sum_w_ycm));
+  track_values.insert(std::make_pair( TRACK_VALUES::MEAN_YCM_NO_EFF, sum_w_ycm_no_eff));
   track_values.insert(std::make_pair( TRACK_VALUES::MEAN_THETA, mean_theta ));
-  track_values.insert(std::make_pair( TRACK_VALUES::BW_VS_FW, bw_vs_fw ));
+  track_values.insert(std::make_pair( TRACK_VALUES::FW_VS_BW, bw_vs_fw ));
+  track_values.insert(std::make_pair( TRACK_VALUES::FW_VS_BW_NO_EFF, bw_vs_fw_no_eff ));
   for( auto x : multiplicities )
     for(auto y : multiplicities){
       if( x.first == y.first )
@@ -271,12 +283,16 @@ void AnalysisTask::Finish() {
 void AnalysisTask::InitEffieciencies(const std::string& file_name) {
   const auto& protons_file_name = file_name;
   file_efficiency_protons_ = TFile::Open(protons_file_name.c_str(), "read");
+  if( !file_efficiency_protons_ )
+    throw std::runtime_error( "Efficiency file not found" );
   int p=2;
-  while(p<40){
+  while(p<60){
     efficiencies_.emplace_back();
     std::string name = "efficiency_"+std::to_string(p);
     if( file_efficiency_protons_ )
       file_efficiency_protons_->GetObject(name.c_str(), efficiencies_.back());
+    if( !efficiencies_.back() )
+      throw std::runtime_error( "Efficiency matrix " +name+ " not found" );
     p+=5;
   }
 }

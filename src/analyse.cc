@@ -14,6 +14,7 @@ int main(int n_args, char** args){
   std::string output_file{"output.root"};
   std::string efficiency_file{"output.root"};
   int physical_trgger{0};
+  int n_events=-1;
   po::options_description options("Options");
   options.add_options()
       ("help,h", "Help screen")
@@ -25,6 +26,8 @@ int main(int n_args, char** args){
        "Path to file with protons efficiency")
       ("physical_trigger,p", po::value<int>(&physical_trgger),
        "Physical trigger number (2 or 3)")
+      ("n-events,N", po::value<int>(&n_events),
+       "Number of events to process (-1=all)")
       ("start-collisions,s","Selects collisions in START detector");
   po::variables_map vm;
   po::parsed_options parsed = po::command_line_parser(n_args, args).options(options).run();
@@ -56,7 +59,7 @@ int main(int n_args, char** args){
   manager.AddTask(analysis_task);
   manager.SetOutFileName(output_file);
   manager.Init();
-  manager.Run(-1);
+  manager.Run(n_events);
   manager.Finish();
   return 0;
 }

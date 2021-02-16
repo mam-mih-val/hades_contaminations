@@ -74,7 +74,9 @@ private:
     MEAN_PZ,
     MEAN_THETA,
     MEAN_YCM,
-    BW_VS_FW,
+    MEAN_YCM_NO_EFF,
+    FW_VS_BW,
+    FW_VS_BW_NO_EFF,
   };
   std::map<FIELDS, int> fields_id_; // map to match detectors' fields with enumerator
   std::map<MULTIPLICITIES, Axis> multiplicities_axes_{
@@ -93,7 +95,9 @@ private:
       std::pair( TRACK_VALUES::MEAN_PZ, Axis{ "mean_pz", "<p_{z}> [GeV/c]", 200, 0.0, 2.0 } ),
       std::pair( TRACK_VALUES::MEAN_Y, Axis{ "mean_y", "<y>", 200, 0.0, 2.0 } ),
       std::pair( TRACK_VALUES::MEAN_YCM, Axis{ "mean_protons_ycm", "<y_{cm}>", 200, -1.0, 1.0 } ),
-      std::pair( TRACK_VALUES::BW_VS_FW, Axis{ "bw_vs_fw_protons", "BW-FW", 200, -30.0, 30.0 } ),
+      std::pair( TRACK_VALUES::MEAN_YCM_NO_EFF, Axis{ "no_eff_mean_protons_ycm", "<y_{cm}>", 200, -1.0, 1.0 } ),
+      std::pair( TRACK_VALUES::FW_VS_BW, Axis{ "bw_vs_fw_protons", "BW-FW", 60, -30.0, 30.0 } ),
+      std::pair( TRACK_VALUES::FW_VS_BW_NO_EFF, Axis{ "no_eff_bw_vs_fw_protons", "BW-FW", 60, -30.0, 30.0 } ),
       std::pair( TRACK_VALUES::MEAN_THETA, Axis{ "mean_theta", "<#theta>", 200, 0.0, 2.0 } ),
   };
   /* pointers to link tree's branches with */

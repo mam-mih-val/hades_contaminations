@@ -41,7 +41,9 @@ void AnalysisTask::Init(std::map<std::string, void *> &branch_map) {
   vtx_z_vtx_r_distribution_ = new TH2F("vtx_z_vtx_r", ";VTX_{z} [mm];#sqrt{VTX_{x}^{2}+VTX_{y}^{2}}", 240, -100.0, 20.0, 250, 0.0, 10.0);
   vtx_z_multiplicity_distribution_ = new TH2F("vtx_z_n_tracks", ";VTX_{z} [mm];Hits TOF+RPC", 240, -100.0, 20.0, 250, 0.0, 250.0);
   vtx_x_vtx_y_distribution_ = new TH2F("vtx_x_vtx_y", ";VTX_{x} [mm];VTX_{y} [mm]", 250, -10.0, 10.0, 250, -10.0, 10.0);
-
+  n_tracks_erat_protons_y_ = Make3DHisto(multiplicities_axes_.at(MULTIPLICITIES::TRACKS_MDC),
+                                         track_values_axes_.at(TRACK_VALUES::ERAT),
+                                         track_values_axes_.at(TRACK_VALUES::MEAN_YCM));
   for( const auto& x : multiplicities_axes_ ){
     std::map<MULTIPLICITIES, TH2F*> x_row;
     for(const auto& y : multiplicities_axes_){
@@ -239,6 +241,7 @@ void AnalysisTask::Exec() {
   track_values.insert(std::make_pair( TRACK_VALUES::MEAN_THETA, mean_theta ));
   track_values.insert(std::make_pair( TRACK_VALUES::FW_VS_BW, bw_vs_fw ));
   track_values.insert(std::make_pair( TRACK_VALUES::FW_VS_BW_NO_EFF, bw_vs_fw_no_eff ));
+  n_tracks_erat_protons_y_->Fill(n_tracks, erat, sum_w_ycm);
   for( auto x : multiplicities )
     for(auto y : multiplicities){
       if( x.first == y.first )
@@ -268,7 +271,7 @@ void AnalysisTask::Finish() {
   pt_rapidity_chi2_->Write();
   pt_rapidity_dca_z_->Write();
   pt_rapidity_dca_xy_->Write();
-
+  n_tracks_erat_protons_y_->Write();
 
   for( const auto& matrices : multiplicities_matrix_ )
     for( const auto& matrix : matrices.second )

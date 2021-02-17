@@ -44,6 +44,16 @@ private:
                           );
     return histo;
   }
+  TH3F* Make3DHisto( Axis first, Axis second, Axis third ){
+    std::string name = first.name + "_" + second.name+"_"+third.name;
+    std::string title = ";" + first.title + ";"+second.title+ ";"+third.title;
+    auto histo = new TH3F( name.c_str(), title.c_str(),
+                          first.n_bins, first.min, first.max,
+                          second.n_bins, second.min, second.max,
+                          third.n_bins, third.min, third.max
+                          );
+    return histo;
+  }
  enum class FIELDS { // enumerator to fast access to detectors' fields
     HITS_TOF,         // Hits in TOF-system
     HITS_RPC,         // Hits in RPC-system
@@ -120,6 +130,7 @@ private:
   TProfile2D* pt_rapidity_chi2_;
   TProfile2D* pt_rapidity_dca_xy_;
   TProfile2D* pt_rapidity_dca_z_;
+  TH3F* n_tracks_erat_protons_y_;
   TFile* file_efficiency_protons_;
   std::vector<TH2F*> efficiencies_;
 };

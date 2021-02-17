@@ -24,10 +24,10 @@ module load compiler/gcc/9
 echo "loading " $ownroot
 source $ownroot
 
-echo "executing $build_dir/analyse -i list.txt -o output.root p 2"
-$build_dir/analyse -i list.txt -o au_au.root -p 2 -e /lustre/nyx/hades/user/mmamaev/hades_contaminations/efficiency/efficiency_protons_auau123.root
+echo "executing $build_dir/analyse -i list.txt -o ag_ag.root"
+$build_dir/analyse -i list.txt -o ag_ag.root -e /lustre/nyx/hades/user/mmamaev/hades_contaminations/efficiency/efficiency_protons_agag158.root
 
-echo "executing $build_dir/analyse -i list.txt -o output.root p 2"
-$build_dir/analyse -i list.txt -o au_x.root -p 2 -e /lustre/nyx/hades/user/mmamaev/hades_contaminations/efficiency/efficiency_protons_auau123.root -s
+#echo "executing $build_dir/analyse -i list.txt -o output.root p 2"
+#$build_dir/analyse -i list.txt -o au_x.root -p 2 -e /lustre/nyx/hades/user/mmamaev/hades_contaminations/efficiency/efficiency_protons_auau123.root -s
 
 echo JOB FINISHED!
